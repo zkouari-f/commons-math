@@ -27,7 +27,7 @@ This repository contains a CI workflow that builds and runs the Maven test suite
 
 The workflow runs a matrix of:
 
-- Java 8, 11, 17, 20, 21, 23, 25
+- Java 8, 11, 17, 20, 21, 23
 - Java 26 is configured as early-access (`26-ea`) and is **allowed to fail** (because EA availability can vary by runner and date).
 
 If you want Java 26 to be required, change `26-ea` to `26` and set `continue_on_error: false`.
@@ -40,7 +40,7 @@ To run the same Java-version matrix locally, provide the JDK home directories vi
 
 1. Set environment variables (JDK *home* directories):
 
-   - `JDK_8`, `JDK_11`, `JDK_17`, `JDK_20`, `JDK_21`, `JDK_23`, `JDK_25`, `JDK_26`
+   - `JDK_8`, `JDK_11`, `JDK_17`, `JDK_20`, `JDK_21`, `JDK_23`, `JDK_26`
 
 2. Run:
 

@@ -53,9 +53,6 @@ jobs:
           - java: "23"
             distribution: temurin
             continue_on_error: false
-          - java: "25"
-            distribution: temurin
-            continue_on_error: false
           # Java 26 might not be generally available on all runners yet.
           # If it is EA-only, prefer using "26-ea" and allow failures.
           - java: "26-ea"

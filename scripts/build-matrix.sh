@@ -15,7 +15,7 @@
 # limitations under the License.
 set -euo pipefail
 
-versions=("${@:-8 11 17 20 21 23 25 26}")
+versions=("${@:-8 11 17 20 21 23 26}")
 
 for v in "${versions[@]}"; do
   env_var="JDK_${v}"

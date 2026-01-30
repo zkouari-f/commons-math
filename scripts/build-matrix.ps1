@@ -15,7 +15,7 @@
 
 [CmdletBinding()]
 param(
-  [string[]]$Versions = @('8','11','17','20','21','23','25','26')
+  [string[]]$Versions = @('8','11','17','20','21','23','26')
 )
 
 $ErrorActionPreference = 'Stop'
