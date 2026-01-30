@@ -16,9 +16,17 @@
 name: CI
 
 on:
+  # allow direct trigger
+  workflow_dispatch:
+  # Don't trigger if other workflow files change
   push:
-    branches: ["**"]
+    paths-ignore:
+      - '**/workflows/*.yml'
+      - '!**/workflows/ci.yml'
   pull_request:
+    paths-ignore:
+      - '**/workflows/*.yml'
+      - '!**/workflows/ci.yml'
 
 permissions:
   contents: read
@@ -64,6 +72,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # 4.2.2
+        with:
+          persist-credentials: false
 
       - name: Set up Java
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
