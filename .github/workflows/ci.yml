@@ -1,0 +1,84 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#      https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-matrix:
+    name: "Maven tests (Java ${{ matrix.java }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - java: "8"
+            distribution: temurin
+            continue_on_error: false
+          - java: "11"
+            distribution: temurin
+            continue_on_error: false
+          - java: "17"
+            distribution: temurin
+            continue_on_error: false
+          - java: "20"
+            distribution: temurin
+            continue_on_error: false
+          - java: "21"
+            distribution: temurin
+            continue_on_error: false
+          - java: "23"
+            distribution: temurin
+            continue_on_error: false
+          - java: "25"
+            distribution: temurin
+            continue_on_error: false
+          # Java 26 might not be generally available on all runners yet.
+          # If it is EA-only, prefer using "26-ea" and allow failures.
+          - java: "26-ea"
+            distribution: temurin
+            continue_on_error: true
+
+    continue-on-error: ${{ matrix.continue_on_error }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # 4.2.2
+
+      - name: Set up Java
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          distribution: ${{ matrix.distribution }}
+          java-version: ${{ matrix.java }}
+          cache: maven
+
+      - name: Show tool versions
+        run: |
+          java -version
+          mvn -version
+
+      - name: Build + test
+        run: mvn -B -ntp -DtrimStackTrace=false test
