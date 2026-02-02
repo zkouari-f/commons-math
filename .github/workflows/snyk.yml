@@ -45,13 +45,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Java
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: maven
-
       # Snyk token must be configured in the repo settings:
       # Settings -> Secrets and variables -> Actions -> New repository secret
       # Name: SNYK_TOKEN
@@ -74,6 +67,11 @@ jobs:
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          # The Snyk Maven action runs in a Docker container.
+          # If we pass the runner's JAVA_HOME into the container it points to a
+          # path that does not exist there, causing Maven to fail.
+          JAVA_HOME: ''
+          JAVA_HOME_17_X64: ''
         with:
           args: >-
             --all-projects
