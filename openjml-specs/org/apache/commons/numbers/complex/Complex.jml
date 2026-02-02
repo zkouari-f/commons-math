@@ -1,0 +1,32 @@
+package org.apache.commons.numbers.complex;
+
+/** Minimal OpenJML specs for Commons Numbers Complex.
+  * These specs are intentionally lightweight, to enable ESC on Commons Math code.
+  */
+public final class Complex implements java.io.Serializable {
+
+  // Abstract model of the (immutable) cartesian components.
+  //@ public model double re;
+  //@ public model double im;
+
+    /*@ public normal_behavior
+      @   ensures \result == re;
+      @   assignable \nothing;
+      @*/
+    public /*@ pure @*/ double getReal();
+
+    /*@ public normal_behavior
+      @   ensures \result == im;
+      @   assignable \nothing;
+      @*/
+    public /*@ pure @*/ double getImaginary();
+
+    /*@ public normal_behavior
+      @   ensures \result != null;
+      @   ensures \fresh(\result);
+      @   ensures \result.re == real;
+      @   ensures \result.im == imaginary;
+      @   assignable \nothing;
+      @*/
+    public static /*@ pure @*/ Complex ofCartesian(double real, double imaginary);
+}

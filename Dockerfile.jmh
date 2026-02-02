@@ -1,0 +1,32 @@
+# syntax=docker/dockerfile:1
+# Build and run JMH benchmarks for Commons Math.
+# Usage:
+#   docker build -f Dockerfile.jmh -t commons-math-jmh .
+#   docker run --rm commons-math-jmh
+
+FROM maven:3.9.8-eclipse-temurin-21 AS build
+WORKDIR /work
+
+# Copy full source tree so Maven reactor can resolve all modules.
+COPY . .
+
+RUN mvn -q -DskipTests -Dstyle.color=never \
+	-DskipRat=true -Drat.skip=true \
+	-Dcheckstyle.skip=true -Dpmd.skip=true -Dspotbugs.skip=true \
+	-pl commons-math-benchmarks -am package
+
+FROM eclipse-temurin:21-jre-jammy
+WORKDIR /bench
+
+RUN mkdir -p /bench/out
+
+LABEL org.opencontainers.image.title="commons-math-jmh"
+LABEL org.opencontainers.image.description="JMH microbenchmarks for Apache Commons Math (runs inside Docker)."
+LABEL org.opencontainers.image.source="https://github.com/apache/commons-math"
+
+COPY --from=build /work/commons-math-benchmarks/target/benchmarks.jar ./benchmarks.jar
+
+# Default benchmark config (can be overridden by passing args to docker run).
+# Keep this short-ish so it completes quickly in CI/classroom environments.
+ENTRYPOINT ["java", "-jar", "/bench/benchmarks.jar"]
+CMD ["org.apache.commons.math4.benchmarks.FastFourierTransformBenchmark", "-bm", "avgt", "-tu", "us", "-f", "1", "-wi", "3", "-i", "3", "-rf", "json", "-rff", "/bench/out/results.json"]

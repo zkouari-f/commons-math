@@ -1,0 +1,22 @@
+# Keep Docker build contexts small
+.git/
+.github/
+.vscode/
+.idea/
+*.iml
+
+# Maven/Java build outputs
+**/target/
+
+# Reports and large artifacts
+jmh-results/
+
+# OS/editor noise
+**/*.log
+.DS_Store
+Thumbs.db
+
+# Not needed for building benchmarks image
+openjml-demo/
+openjml-specs/
+*.ps1

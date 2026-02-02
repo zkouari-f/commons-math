@@ -108,6 +108,7 @@
     <module>commons-math-core</module>
     <module>commons-math-neuralnet</module>
     <module>commons-math-transform</module>
+    <module>commons-math-benchmarks</module>
 
     <!-- 2. Modularized (but not refactored) legacy functionalities. -->
     <module>commons-math-legacy-exception</module>
@@ -716,6 +717,115 @@ This is avoided by creating an empty directory when svn is not available.
                       </limits>
                     </rule>
                   </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Local code coverage generation (does not enforce coverage thresholds). -->
+    <profile>
+      <id>coverage</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${commons.jacoco.version}</version>
+            <executions>
+              <execution>
+                <id>prepare-agent</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>report</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>report</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Mutation testing using PIT (run on-demand). -->
+    <profile>
+      <id>mutation</id>
+      <properties>
+        <!-- Helpful defaults; can be overridden on the command line. -->
+        <pitest.targetClasses>org.apache.commons.math4.*</pitest.targetClasses>
+        <pitest.targetTests>org.apache.commons.math4.*</pitest.targetTests>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <version>1.16.1</version>
+            <dependencies>
+              <dependency>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-junit5-plugin</artifactId>
+                <version>1.2.2</version>
+              </dependency>
+            </dependencies>
+            <configuration>
+              <targetClasses>
+                <param>${pitest.targetClasses}</param>
+              </targetClasses>
+              <targetTests>
+                <param>${pitest.targetTests}</param>
+              </targetTests>
+
+              <!-- Keep runs stable and fast-ish; tweak as needed. -->
+              <threads>4</threads>
+              <timeoutFactor>1.25</timeoutFactor>
+              <timeoutConstant>4000</timeoutConstant>
+              <timestampedReports>false</timestampedReports>
+              <outputFormats>
+                <param>HTML</param>
+                <param>XML</param>
+              </outputFormats>
+              <avoidCallsTo>
+                <param>java.util.logging</param>
+              </avoidCallsTo>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Formal verification checks using OpenJML (via Docker). -->
+    <profile>
+      <id>openjml</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <inherited>false</inherited>
+            <executions>
+              <execution>
+                <id>openjml</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <workingDirectory>${project.basedir}</workingDirectory>
+                  <executable>powershell</executable>
+                  <arguments>
+                    <argument>-ExecutionPolicy</argument>
+                    <argument>Bypass</argument>
+                    <argument>-File</argument>
+                    <argument>${project.basedir}/scripts/openjml.ps1</argument>
+                  </arguments>
                 </configuration>
               </execution>
             </executions>

@@ -1,0 +1,20 @@
+package org.apache.commons.math4.transform;
+
+import java.util.function.DoubleUnaryOperator;
+
+/** Lightweight specs to allow OpenJML ESC on callers. */
+final class TransformUtils {
+
+    /*@ normal_behavior
+      @ requires f != null;
+      @ requires n > 0;
+      @ requires min < max;
+      @ ensures \result != null;
+      @ ensures \result.length == n;
+      @ assignable \nothing;
+      @*/
+    static double[] sample(DoubleUnaryOperator f,
+                           double min,
+                           double max,
+                           int n);
+}

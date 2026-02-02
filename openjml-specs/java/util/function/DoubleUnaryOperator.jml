@@ -1,0 +1,14 @@
+package java.util.function;
+
+/** Minimal OpenJML specs for java.util.function.DoubleUnaryOperator.
+  *
+  * This treats applyAsDouble as side-effect free (assignable \nothing), which is
+  * a reasonable assumption for numerical sampling loops.
+  */
+public interface DoubleUnaryOperator {
+
+    /*@ public normal_behavior
+      @   assignable \nothing;
+      @*/
+    public /*@ pure @*/ double applyAsDouble(double operand);
+}

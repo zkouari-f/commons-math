@@ -1,0 +1,161 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#      https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Security
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [ master, main ]
+  schedule:
+    - cron: '15 6 * * 1' # Mondays
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: Dependency Review (PR)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # 4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+
+  trivy-fs:
+    name: Trivy filesystem scan (SARIF)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # 4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Trivy FS scan
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/repo" \
+            -w /repo \
+            aquasec/trivy:0.50.2 \
+            fs --scanners vuln,config \
+            --severity CRITICAL,HIGH \
+            --format sarif \
+            --output trivy-fs.sarif \
+            /repo
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v4.32.0
+        with:
+          sarif_file: trivy-fs.sarif
+
+  trivy-image-jmh:
+    name: Trivy image scan (Dockerfile.jmh)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # 4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Detect Docker/JMH changes
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base='${{ github.event.pull_request.base.sha }}'
+            head='${{ github.event.pull_request.head.sha }}'
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            base='${{ github.event.before }}'
+            head='${{ github.sha }}'
+          else
+            # schedule/workflow_dispatch: always run
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          changed_files=$(git diff --name-only "$base" "$head" || true)
+          if echo "$changed_files" | grep -Eq '^(Dockerfile\.jmh|jmh-run\.ps1|dockerhub-publish-jmh\.ps1|\.dockerignore|commons-math-benchmarks/|\.github/workflows/security\.yml)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build image
+        if: steps.changes.outputs.run == 'true'
+        run: |
+          docker build -f Dockerfile.jmh -t commons-math-jmh:ci .
+
+      - name: Trivy image scan
+        if: steps.changes.outputs.run == 'true'
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/repo" \
+            -w /repo \
+            aquasec/trivy:0.50.2 \
+            image \
+            --severity CRITICAL,HIGH \
+            --format sarif \
+            --output trivy-image-jmh.sarif \
+            commons-math-jmh:ci
+
+      - name: Upload SARIF
+        if: steps.changes.outputs.run == 'true'
+        uses: github/codeql-action/upload-sarif@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v4.32.0
+        with:
+          sarif_file: trivy-image-jmh.sarif
+
+  gitleaks:
+    name: Secrets scan (Gitleaks)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # 4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Gitleaks
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/repo" \
+            -w /repo \
+            zricethezav/gitleaks:v8.21.2 \
+            detect --source=/repo --redact --exit-code 1
