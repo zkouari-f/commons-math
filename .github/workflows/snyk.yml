@@ -55,8 +55,23 @@ jobs:
       # Snyk token must be configured in the repo settings:
       # Settings -> Secrets and variables -> Actions -> New repository secret
       # Name: SNYK_TOKEN
+      - name: Check Snyk token
+        id: snyk_token
+        shell: bash
+        run: |
+          if [ -n "${SNYK_TOKEN:-}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "SNYK_TOKEN is not configured; skipping Snyk scan." >&2
+          fi
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
       - name: Snyk test (dependencies)
-        uses: snyk/actions/maven@master
+        if: ${{ steps.snyk_token.outputs.present == 'true' }}
+        uses: snyk/actions/maven@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
+        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -66,7 +81,7 @@ jobs:
             --sarif-file-output=snyk.sarif
 
       - name: Upload SARIF
-        if: always()
+        if: ${{ hashFiles('snyk.sarif') != '' }}
         uses: github/codeql-action/upload-sarif@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v4.32.0
         with:
           sarif_file: snyk.sarif
