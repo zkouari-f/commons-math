@@ -39,20 +39,10 @@ final class TransformUtils {
      * @param d Scaling coefficient.
      * @return a reference to the scaled array.
      */
-        /*@ requires f != null;
-            @ assignable f[*];
-            @ ensures \result == f;
-            @*/
     static double[] scaleInPlace(double[] f, double d) {
-                int i = 0;
-                /*@ loop_invariant 0 <= i && i <= f.length;
-                    @ loop_assignable f[*], i;
-                    @ decreases f.length - i;
-                    @*/
-                while (i < f.length) {
-                        f[i] *= d;
-                        i++;
-                }
+        for (int i = 0; i < f.length; i++) {
+            f[i] *= d;
+        }
         return f;
     }
 
@@ -64,19 +54,10 @@ final class TransformUtils {
      * @param d Scaling coefficient.
      * @return the scaled array.
      */
-        /*@ requires f != null;
-            @ requires (\forall int j; 0 <= j && j < f.length; f[j] != null);
-            @ ensures \result == f;
-            @*/
     static Complex[] scaleInPlace(Complex[] f, double d) {
-                int i = 0;
-                /*@ loop_invariant 0 <= i && i <= f.length;
-                    @ decreases f.length - i;
-                    @*/
-                while (i < f.length) {
-                        f[i] = Complex.ofCartesian(d * f[i].getReal(), d * f[i].getImaginary());
-                        i++;
-                }
+        for (int i = 0; i < f.length; i++) {
+            f[i] = Complex.ofCartesian(d * f[i].getReal(), d * f[i].getImaginary());
+        }
         return f;
     }
 
@@ -94,36 +75,15 @@ final class TransformUtils {
      * @return a two dimensional array filled with the real and imaginary parts
      * of the specified complex input.
      */
-        /*@ requires dataC != null;
-            @ requires (\forall int j; 0 <= j && j < dataC.length; dataC[j] != null);
-            @ ensures \result != null && \result.length == 2;
-            @ ensures \result[0] != null && \result[0].length == dataC.length;
-            @ ensures \result[1] != null && \result[1].length == dataC.length;
-            @ ensures (\forall int j; 0 <= j && j < dataC.length;
-            @            \result[0][j] == dataC[j].re &&
-            @            \result[1][j] == dataC[j].im);
-            @*/
     static double[][] createRealImaginary(final Complex[] dataC) {
         final double[][] dataRI = new double[2][dataC.length];
         final double[] dataR = dataRI[0];
         final double[] dataI = dataRI[1];
-                int i = 0;
-                /*@ loop_invariant 0 <= i && i <= dataC.length;
-                    @ loop_invariant dataR != null && dataI != null;
-                    @ loop_invariant dataR.length == dataC.length && dataI.length == dataC.length;
-                    @ loop_invariant (\forall int j; 0 <= j && j < i; dataR[j] == dataC[j].re);
-                    @ loop_invariant (\forall int j; 0 <= j && j < i; dataI[j] == dataC[j].im);
-                    @ loop_assignable dataR[*], dataI[*], i;
-                    @ decreases dataC.length - i;
-                    @*/
-                while (i < dataC.length) {
-                        final Complex c = dataC[i];
-                        dataR[i] = c.getReal();
-                        dataI[i] = c.getImaginary();
-                    /*@ assert dataR[i] == dataC[i].re; @*/
-                    /*@ assert dataI[i] == dataC[i].im; @*/
-                        i++;
-                }
+        for (int i = 0; i < dataC.length; i++) {
+            final Complex c = dataC[i];
+            dataR[i] = c.getReal();
+            dataI[i] = c.getImaginary();
+        }
         return dataRI;
     }
 
@@ -141,43 +101,23 @@ final class TransformUtils {
      * @throws IllegalArgumentException if the number of rows of the specified
      * array is not two, or the array is not rectangular.
      */
-        /*@ requires dataRI != null;
-            @ requires dataRI.length == 2;
-            @ requires dataRI[0] != null && dataRI[1] != null;
-            @ requires dataRI[0].length == dataRI[1].length;
-            @ ensures \result != null;
-            @ ensures \result.length == dataRI[0].length;
-            @ ensures (\forall int j; 0 <= j && j < \result.length; \result[j] != null);
-            @*/
     static Complex[] createComplex(final double[][] dataRI) {
         if (dataRI.length != NUM_PARTS) {
             throw new TransformException(TransformException.SIZE_MISMATCH,
-                                         new Object[] { dataRI.length, NUM_PARTS });
+                                         dataRI.length, NUM_PARTS);
         }
         final double[] dataR = dataRI[0];
         final double[] dataI = dataRI[1];
         if (dataR.length != dataI.length) {
             throw new TransformException(TransformException.SIZE_MISMATCH,
-                                         new Object[] { dataI.length, dataR.length });
+                                         dataI.length, dataR.length);
         }
 
         final int n = dataR.length;
         final Complex[] c = new Complex[n];
-                int i = 0;
-                /*@ loop_invariant 0 <= i && i <= n;
-                    @ loop_invariant n == dataR.length && n == dataI.length;
-                    @ loop_invariant c != null && c.length == n;
-                    @ loop_invariant (\forall int j; 0 <= j && j < i; c[j] != null);
-                    @ loop_assignable c[*], i;
-                    @ decreases n - i;
-                    @*/
-                while (i < n) {
-                        c[i] = Complex.ofCartesian(dataR[i], dataI[i]);
-                        /*@ assert c[i] != null; @*/
-                        i++;
-                }
-                /*@ assert i == n; @*/
-                /*@ assert (\forall int j; 0 <= j && j < n; c[j] != null); @*/
+        for (int i = 0; i < n; i++) {
+            c[i] = Complex.ofCartesian(dataR[i], dataI[i]);
+        }
         return c;
     }
 
@@ -197,37 +137,23 @@ final class TransformUtils {
      * greater than, or equal to the upper bound {@code max}, if the number
      * of sample points {@code n} is negative.
      */
-        /*@ requires f != null;
-            @ requires n > 0;
-            @ requires min < max;
-            @ ensures \result != null;
-            @ ensures \result.length == n;
-            @*/
     static double[] sample(DoubleUnaryOperator f,
                            double min,
                            double max,
                            int n) {
         if (n <= 0) {
             throw new TransformException(TransformException.NOT_STRICTLY_POSITIVE,
-                                         new Object[] { Integer.valueOf(n) });
+                                         Integer.valueOf(n));
         }
         if (min >= max) {
-            throw new TransformException(TransformException.TOO_LARGE,
-                                         new Object[] { Double.valueOf(min), Double.valueOf(max) });
+            throw new TransformException(TransformException.TOO_LARGE, min, max);
         }
 
         final double[] s = new double[n];
         final double h = (max - min) / n;
-                int i = 0;
-                /*@ loop_invariant 0 <= i && i <= n;
-                    @ loop_invariant s != null && s.length == n;
-                    @ loop_assignable s[*], i;
-                    @ decreases n - i;
-                    @*/
-                while (i < n) {
-                        s[i] = f.applyAsDouble(min + i * h);
-                        i++;
-                }
+        for (int i = 0; i < n; i++) {
+            s[i] = f.applyAsDouble(min + i * h);
+        }
         return s;
     }
 }

@@ -30,12 +30,6 @@ public interface RealTransform extends UnaryOperator<double[]> {
      * @return the transformed array (spectrum).
      * @throws IllegalArgumentException if the transform cannot be performed.
      */
-        /*@ also
-            @ public normal_behavior
-            @ requires f != null;
-            @ ensures \result != null;
-            @ ensures \result.length == f.length;
-            @*/
     @Override
     double[] apply(double[] f);
 
@@ -49,14 +43,6 @@ public interface RealTransform extends UnaryOperator<double[]> {
      * @return the result.
      * @throws IllegalArgumentException if the transform cannot be performed.
      */
-        /*@ public behavior
-            @ requires f != null;
-            @ requires n > 0;
-            @ requires min < max;
-            @ ensures \result != null;
-            @ ensures \result.length == n;
-            @ signals (IllegalArgumentException e) true;
-            @*/
     default double[] apply(DoubleUnaryOperator f,
                            double min,
                            double max,
